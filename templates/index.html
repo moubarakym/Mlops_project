@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div style="color:white">
+        <form action="{{ url_for('predict') }}" method="post" onsubmit="showResult(); return false;">
+            <h2>Predictive Analysis</h2>
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px;">
+                <label style="width: 200px; text-align: right;">Credit Lines Outstanding:</label>
+                <input id="first" name="credit_lines_outstanding" type="number" required="required">
+            </div>
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px;">
+                <label style="width: 200px; text-align: right;">Loan Amount Outstanding:</label>
+                <input id="second" name="loan_amt_outstanding" required="required">
+            </div>
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px;">
+                <label style="width: 200px; text-align: right;">Total Debt Outstanding:</label>
+                <input id="third" name="total_debt_outstanding" required="required">
+            </div>
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px;">
+                <label style="width: 200px; text-align: right;">Income:</label>
+                <input id="fourth" name="income" required="required">
+            </div>
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px;">
+                <label style="width: 200px; text-align: right;">Years Employed:</label>
+                <input id="fifth" name="years_employed" required="required">
+            </div>
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px;">
+                <label style="width: 200px; text-align: right;">FICO Score:</label>
+                <input id="sixth" name="fico_score" required="required">
+            </div>
+            <button id="sub" type="submit">Result</button>
+            <br>
+        </form>
+        <br><br>
+        <h3 id="resultDisplay">{{ prediction_text }}</h3>
+    </div>
+
+    <style>
+        body {
+            background-color: #0a0a33;
+            text-align: center;
+            padding: 0px;
+            color: white;
+        }
+
+        #sub {
+            width: 120px;
+            height: 43px;
+            text-align: center;
+            border-radius: 14px;
+            font-size: 18px;
+            background-color: #283593;
+            color: white;
+            border: none;
+            margin-top: 15px;
+        }
+
+        #sub:hover {
+            background-color: #1a237e;
+        }
+
+        input {
+            background-color: white;
+            color: black;
+            border-radius: 14px;
+            height: 25px;
+            font-size: 20px;
+            text-align: center;
+            margin-left: 10px;
+        }
+    </style>
+
+    <script>
+        function showResult() {
+            const resultDisplay = document.getElementById("resultDisplay");
+            resultDisplay.innerHTML = "Calculating...";
+
+            setTimeout(() => {
+                resultDisplay.innerHTML = "{{ prediction_text }}";
+            }, 1000); 
+        }
+    </script>
+</body>
+
+</html>
