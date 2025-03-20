@@ -4,7 +4,7 @@ import pandas as pd
 
 app = Flask(__name__)
 
-# Charger le modèle de machine learning
+# Charger le modèle de machine learning.
 with open('model.pkl', 'rb') as model_file:
     model = pickle.load(model_file)
 
