@@ -1,7 +1,10 @@
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, confusion_matrix
 import pickle
 
 # Charger les données
@@ -9,7 +12,67 @@ file_path = "Loan_Data.csv"
 df = pd.read_csv(file_path)
 
 # Afficher les premières lignes et les informations générales
+print("\nPremières lignes du dataset :")
+print(df.head())
 
+# Analyse exploratoire (EDA) 
+
+print("\nInformations générales :")
+print(df.info())
+
+print("\nValeurs manquantes :")
+print(df.isnull().sum())
+
+print("\nStatistiques descriptives :")
+print(df.describe())
+
+print("\nRépartition du target :")
+print(df['default'].value_counts(normalize=True))
+
+# Répartition des défauts
+sns.countplot(x='default', data=df)
+plt.title('Répartition des défauts de paiement')
+plt.xlabel('Default')
+plt.ylabel('Nombre de clients')
+plt.show()
+
+# Histogramme de la variable "income"
+sns.histplot(df['income'], kde=True, color='blue')
+plt.title('Distribution du revenu')
+plt.xlabel('Revenu')
+plt.ylabel('Fréquence')
+plt.show()
+
+# Histogramme de la variable "fico_score"
+sns.histplot(df['fico_score'], kde=True, color='green')
+plt.title('Distribution du FICO Score')
+plt.xlabel('FICO Score')
+plt.ylabel('Fréquence')
+plt.show()
+
+# Scatter plot entre "income" et "fico_score"
+plt.figure(figsize=(8,6))
+sns.scatterplot(x='income', y='fico_score', hue='default', data=df)
+plt.title('Relation entre le revenu et le FICO Score')
+plt.xlabel('Revenu')
+plt.ylabel('FICO Score')
+plt.show()
+
+# Pairplot des variables
+sns.pairplot(df, hue='default', palette='coolwarm')
+plt.title('Pairplot des variables')
+plt.show()
+
+# Violin plot pour "fico_score" et "default"
+sns.violinplot(x='default', y='fico_score', data=df, palette='coolwarm')
+plt.title('Distribution du FICO Score par défaut')
+plt.show()
+
+# Corrélation générale
+plt.figure(figsize=(12, 10))
+sns.heatmap(df.corr(), annot=True, cmap='coolwarm', fmt='.2f', annot_kws={'size': 10}, linewidths=0.5)
+plt.title('Matrice de corrélation améliorée')
+plt.show()
 
 # Suppression de l'ID client
 df_cleaned = df.drop(columns=["customer_id"])
