@@ -36,6 +36,25 @@ plt.xlabel('Default')
 plt.ylabel('Nombre de clients')
 plt.show()
 
+# Visualisation du déséquilibre des classes dans la variable 'default'
+sns.countplot(x='default', data=df, palette='Blues')
+plt.title('Déséquilibre des classes : Nombre de clients avec et sans défaut')
+plt.xlabel('Default')
+plt.ylabel('Nombre de clients')
+plt.xticks([0, 1], ['Sans défaut', 'Avec défaut'])
+plt.show()
+
+# Visualisation du déséquilibre des classes avec un graphique circulaire
+class_counts = df['default'].value_counts()
+class_labels = ['Sans défaut', 'Avec défaut']
+
+plt.figure(figsize=(6, 6))
+plt.pie(class_counts, labels=class_labels, autopct='%1.1f%%', startangle=90, colors=['lightblue', 'lightcoral'])
+plt.title('Proportion des clients avec et sans défaut')
+plt.axis('equal')  # Pour que le graphique soit un cercle parfait
+plt.show()
+
+
 # Histogramme de la variable "income"
 sns.histplot(df['income'], kde=True, color='blue')
 plt.title('Distribution du revenu')
