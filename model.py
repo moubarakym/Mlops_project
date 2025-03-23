@@ -3,123 +3,129 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import numpy as np
 import pickle
+import mlflow
+import mlflow.sklearn
+from mlflow import MlflowClient
 
-# Charger les données
+
+# Initialisation de MLflow
+client = MlflowClient(tracking_uri="http://127.0.0.1:8080")
+
+all_experiments = client.search_experiments()
+
+
+# Description de l'expérience MLflow
+experiment_description = "This experience is for our mlops project purpose."
+
+experiment_tags = {
+    "project_name": "mlops PROJECT",
+    "store_dept": "produce",
+    "team": "Hajer-GAM, Eya-SAIDI, Rahaf-ATRI, Moubarak-YAHAYA_MOUSSA",
+    "mlflow.note.content": experiment_description,
+}
+
+produce_apples_experiment = client.create_experiment(
+    name="Loan prediction", tags=experiment_tags
+)
+
+apples_experiment = client.search_experiments(
+    filter_string="tags.project_name = 'mlops PROJECT'"
+)
+
+mlflow.set_tracking_uri("http://127.0.0.1:8080")
+loan_experiment = mlflow.set_experiment("Loan prediction")
+
+# Chargement des données
 file_path = "Loan_Data.csv"
 df = pd.read_csv(file_path)
 
-# Afficher les premières lignes et les informations générales
-print("\nPremières lignes du dataset :")
-print(df.head())
 
-# Analyse exploratoire (EDA) 
-
-print("\nInformations générales :")
-print(df.info())
-
-print("\nValeurs manquantes :")
-print(df.isnull().sum())
-
-print("\nStatistiques descriptives :")
-print(df.describe())
-
-print("\nRépartition du target :")
-print(df['default'].value_counts(normalize=True))
-
-# Répartition des défauts
-sns.countplot(x='default', data=df)
-plt.title('Répartition des défauts de paiement')
-plt.xlabel('Default')
-plt.ylabel('Nombre de clients')
-plt.show()
-
-# Visualisation du déséquilibre des classes dans la variable 'default'
-sns.countplot(x='default', data=df, palette='Blues')
-plt.title('Déséquilibre des classes : Nombre de clients avec et sans défaut')
-plt.xlabel('Default')
-plt.ylabel('Nombre de clients')
-plt.xticks([0, 1], ['Sans défaut', 'Avec défaut'])
-plt.show()
-
-# Visualisation du déséquilibre des classes avec un graphique circulaire
-class_counts = df['default'].value_counts()
-class_labels = ['Sans défaut', 'Avec défaut']
-
-plt.figure(figsize=(6, 6))
-plt.pie(class_counts, labels=class_labels, autopct='%1.1f%%', startangle=90, colors=['lightblue', 'lightcoral'])
-plt.title('Proportion des clients avec et sans défaut')
-plt.axis('equal')  # Pour que le graphique soit un cercle parfait
-plt.show()
-
-
-# Histogramme de la variable "income"
-sns.histplot(df['income'], kde=True, color='blue')
-plt.title('Distribution du revenu')
-plt.xlabel('Revenu')
-plt.ylabel('Fréquence')
-plt.show()
-
-# Histogramme de la variable "fico_score"
-sns.histplot(df['fico_score'], kde=True, color='green')
-plt.title('Distribution du FICO Score')
-plt.xlabel('FICO Score')
-plt.ylabel('Fréquence')
-plt.show()
-
-# Scatter plot entre "income" et "fico_score"
-plt.figure(figsize=(8,6))
-sns.scatterplot(x='income', y='fico_score', hue='default', data=df)
-plt.title('Relation entre le revenu et le FICO Score')
-plt.xlabel('Revenu')
-plt.ylabel('FICO Score')
-plt.show()
-
-# Pairplot des variables
-sns.pairplot(df, hue='default', palette='coolwarm')
-plt.title('Pairplot des variables')
-plt.show()
-
-# Violin plot pour "fico_score" et "default"
-sns.violinplot(x='default', y='fico_score', data=df, palette='coolwarm')
-plt.title('Distribution du FICO Score par défaut')
-plt.show()
-
-# Corrélation générale
-plt.figure(figsize=(12, 10))
-sns.heatmap(df.corr(), annot=True, cmap='coolwarm', fmt='.2f', annot_kws={'size': 10}, linewidths=0.5)
-plt.title('Matrice de corrélation améliorée')
-plt.show()
-
-# Suppression de l'ID client
 df_cleaned = df.drop(columns=["customer_id"])
 
-# Séparer les features et la cible
+# Séparation des features et de la cible
+df_cleaned = df.drop(columns=["customer_id"])
 X = df_cleaned.drop(columns=["default"])
 y = df_cleaned["default"]
 
-# Division en train et test (80/20)
+# Division train/test
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
-# Normalisation des variables continues
+# Normalisation des données
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-# Vérification des dimensions après prétraitement
-X_train_scaled.shape, X_test_scaled.shape
+# Liste des modèles à entraîner
+models = {
+    "Linear Regression": LinearRegression(),
+    "Decision Tree": DecisionTreeRegressor(max_depth=5, min_samples_split=10, random_state=42),
+    "Random Forest": RandomForestRegressor(n_estimators=100, max_depth=10, min_samples_split=5, random_state=42)
+}
 
-# Initialiser le modèle de régression linéaire
-model = LinearRegression()
+params = {"test_size": 0.2, "random_state": 42}
 
-# Entraîner le modèle sur les données d'entraînement
-model.fit(X_train_scaled, y_train)
+best_model = None
+best_score = -float('inf')
 
-# Prédire les valeurs sur l'ensemble de test
-with open('model.pkl', 'wb') as file:
-    pickle.dump(model, file)
+for model_name, model in models.items():
+    # Entraînement
+    model.fit(X_train_scaled, y_train)
+    y_pred = model.predict(X_test_scaled)
 
-print("Modèle sauvegardé sous 'model.pkl' !")
+    # Calcul des métriques
+    mae = mean_absolute_error(y_test, y_pred)
+    mse = mean_squared_error(y_test, y_pred)
+    rmse = np.sqrt(mse)
+    r2 = r2_score(y_test, y_pred)
+
+    metrics = {"mae": mae, "mse": mse, "rmse": rmse, "r2": r2}
+
+    # Ajout des paramètres spécifiques du modèle
+    if model_name == "Decision Tree":
+        model_params = {
+            "max_depth": model.max_depth,
+            "min_samples_split": model.min_samples_split,
+            "random_state": model.random_state
+        }
+    elif model_name == "Random Forest":
+        model_params = {
+            "n_estimators": model.n_estimators,
+            "max_depth": model.max_depth,
+            "min_samples_split": model.min_samples_split,
+            "random_state": model.random_state
+        }
+    else:
+        model_params = {"test_size":0.2, "random_state":42}
+
+    # Suivi avec MLflow
+    with mlflow.start_run(run_name=f"{model_name}_test") as run:
+        # Log des paramètres généraux
+        mlflow.log_params(params)
+        # Log des paramètres spécifiques au modèle
+        mlflow.log_params(model_params)
+        # Log des métriques
+        mlflow.log_metrics(metrics)
+        # Log du modèle
+        mlflow.sklearn.log_model(
+            sk_model=model, input_example=X_train_scaled, artifact_path=f"{model_name}_model"
+        )
+
+        # Comparaison des modèles
+        if r2 > best_score:
+            best_score = r2
+            best_model = model
+
+# Sauvegarde du modèle Linear Regression localement
+if best_model:
+    with open('model.pkl', 'wb') as file:
+        pickle.dump(best_model, file)
+    print("Meilleur modèle sauvegardé sous 'model.pkl' !")
+else:
+    print("Aucun modèle n'a été trouvé pour être sauvegardé.")
 
